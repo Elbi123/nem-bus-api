@@ -5,6 +5,8 @@ dotenv.config({
     path: "./config.env",
 });
 
+// Nothing is checked
+
 connectDB();
 
 // Third party middleware

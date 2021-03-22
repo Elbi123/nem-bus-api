@@ -25,6 +25,7 @@ const voyageSchema = new mongoose.Schema(
             default: true,
             required: true,
         },
+        companies: [{ type: mongoose.Schema.Types.ObjectId, ref: "Company" }],
     },
     { timestamps: true }
 );

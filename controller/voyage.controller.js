@@ -1,4 +1,4 @@
-const Voyage = require("./../models/voyageModel");
+const Voyage = require("../models/voyage.model");
 
 exports.getAllVoyage = async (req, res) => {
     try {
@@ -17,21 +17,25 @@ exports.getAllVoyage = async (req, res) => {
 
 exports.getVoyage = async (req, res) => {
     try {
-        const voyage = await Voyage.findById(req.params.id);
-        if (voyage) {
+        const voyage = Voyage.findOne({
+            _id: req.params.id,
+        });
+        if (!voyage) {
             res.status(200).json({
-                status: "success",
+                // status: "success",
+                message: "is found",
                 voyage,
             });
         } else {
-            res.status(400).json({
-                status: "fail",
-                message: "Voyage Not Found",
+            const res_val = await voyage;
+            res.status(200).json({
+                status: "success",
+                res_val,
             });
         }
     } catch (err) {
         res.status(400).json({
-            status: fail,
+            status: "fail",
             message: "Voyage Not Found",
         });
     }

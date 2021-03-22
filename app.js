@@ -3,8 +3,9 @@ const cors = require("cors");
 const morgan = require("morgan");
 const bodyParser = require("body-parser");
 
-const voyageRouter = require("./routes/voyageRouter");
-const userRouter = require("./routes/userRouter");
+const voyageRouter = require("./routes/voyage.router");
+const userRouter = require("./routes/user.router");
+const companyRouter = require("./routes/company.route");
 
 // const { fail } = require("assert");
 const { dirname } = require("path");
@@ -23,5 +24,6 @@ app.use(bodyParser.json());
 // ROUTER - MIDDLEWARE
 app.use("/api/v1/voyages", voyageRouter);
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/companies", companyRouter);
 
 module.exports = app;

@@ -80,20 +80,45 @@ exports.createCompany = async (req, res) => {
     }
 };
 
-exports.updateCompany = (req, res) => {
-    res.status(200).json({
-        status: "success",
-    });
+exports.updateCompany = async (req, res) => {
+    try {
+        const company = await Company.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            {
+                new: true,
+                runValidators: true,
+            }
+        );
+        res.status(200).json({
+            status: "success",
+            company: company,
+        });
+    } catch (err) {
+        res.status(404).json({
+            status: "fail",
+            message: err,
+        });
+    }
 };
 
-exports.deleteCompany = (req, res) => {
-    res.status(200).json({
-        status: "success",
-    });
+exports.deleteCompany = async (req, res) => {
+    try {
+        await Company.findOneAndDelete(req.params.id).then(() => {
+            res.status(200).json({
+                status: "success",
+                message: "Company Deleted",
+            });
+        });
+    } catch (err) {
+        res.status(404).json({
+            message: err,
+        });
+    }
 };
 
 // Company Bus GETTERS AND SETTERS
-exports.getCompanyAllBus = (req, res) => {
+exports.getCompanyAllBus = async (req, res) => {
     res.status(200).json({
         status: "success",
     });

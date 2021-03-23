@@ -1,5 +1,6 @@
 const Company = require("./../models/index.model").Company;
 
+// Company GETTERS AND SETTERS
 exports.getCompanies = async (req, res) => {
     try {
         const count = await Company.countDocuments();
@@ -31,7 +32,7 @@ exports.getCompanies = async (req, res) => {
     }
 };
 
-module.getCompany = async (req, res) => {
+exports.getCompany = async (req, res) => {
     try {
         const company = Company.findOne({
             _id: req.params.id,
@@ -77,4 +78,91 @@ exports.createCompany = async (req, res) => {
             message: "Invalid data sent",
         });
     }
+};
+
+exports.updateCompany = (req, res) => {
+    res.status(200).json({
+        status: "success",
+    });
+};
+
+exports.deleteCompany = (req, res) => {
+    res.status(200).json({
+        status: "success",
+    });
+};
+
+// Company Bus GETTERS AND SETTERS
+exports.getCompanyAllBus = (req, res) => {
+    res.status(200).json({
+        status: "success",
+    });
+};
+
+exports.getCompanyBus = (req, res) => {
+    res.status(200).json({
+        status: "success",
+    });
+};
+
+exports.createCompanyBus = (req, res) => {
+    res.status(200).json({
+        status: "success",
+    });
+};
+
+exports.updateCompanyBus = (req, res) => {
+    res.status(200).json({
+        status: "success",
+    });
+};
+
+exports.deleteCompanyBus = (req, res) => {
+    res.status(200).json({
+        status: "success",
+    });
+};
+
+// Company User GETTERS AND SETTERS
+exports.getCompanyAllUsers = (req, res) => {
+    res.status(200).json({
+        status: "success",
+    });
+};
+
+exports.getCompanyUser = (req, res) => {
+    res.status(200).json({
+        status: "success",
+    });
+};
+
+// Company Voyage GETTERS AND SETTERS
+exports.getAllCompanyVoyages = (req, res) => {
+    res.status(200).json({
+        status: "success",
+    });
+};
+
+exports.getCompanyVoyage = (req, res) => {
+    res.status(200).json({
+        status: "success",
+    });
+};
+
+exports.createCompanyVoyage = (req, res) => {
+    res.status(200).json({
+        status: "success",
+    });
+};
+
+exports.updateCompanyVoyage = (res, req) => {
+    res.status(200).json({
+        status: "success",
+    });
+};
+
+exports.deleteCompanyVoyage = (req, res) => {
+    res.status(200).json({
+        status: "success",
+    });
 };

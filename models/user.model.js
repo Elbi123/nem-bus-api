@@ -2,11 +2,7 @@ const mongoose = require("mongoose");
 
 const user = mongoose.Schema(
     {
-        firstName: {
-            type: String,
-            required: true,
-        },
-        lastName: {
+        username: {
             type: String,
             required: true,
         },
@@ -22,6 +18,7 @@ const user = mongoose.Schema(
         age: {
             type: Number,
         },
+        roles: [{ type: mongoose.Schema.Types.ObjectId, ref: "Role" }],
         companies: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
     },
     {

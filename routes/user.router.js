@@ -8,6 +8,8 @@ router
     .get(userController.getAllUser)
     .post(userController.createUser);
 
+// route.route("/");
+
 router
     .route("/:id")
     .get(userController.getUser)

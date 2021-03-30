@@ -15,10 +15,14 @@ const user = mongoose.Schema(
             unique: true,
             required: true,
         },
+        password: {
+            type: String,
+            required: true,
+        },
         age: {
             type: Number,
         },
-        companies: [{ type: mongoose.Schema.Types.ObjectId, ref: "Company" }],
+        companies: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
     },
     {
         timestamps: true,

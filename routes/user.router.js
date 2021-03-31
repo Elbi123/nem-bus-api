@@ -15,5 +15,6 @@ router
     .get(userController.getUser)
     .patch(userController.updateUser)
     .delete(userController.deleteUser);
+router.route("/update/:role").patch(userController.updateUserRole);
 
 module.exports = router;

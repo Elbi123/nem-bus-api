@@ -226,6 +226,81 @@ exports.deleteCompanyBus = (req, res) => {
 };
 
 // Company User GETTERS AND SETTERS
+exports.createCompanyUser = async (req, res) => {
+    const { companyId, userName } = req.params;
+    // console.log(companyId, userName);
+    if (ObjectId.isValid(companyId)) {
+        await Company.findOne({ _id: companyId }, async (err, company) => {
+            if (err) {
+                res.status(500).send({
+                    message: err,
+                });
+                return;
+            }
+            if (!company) {
+                res.status(404).send({
+                    message: "Company Not Found",
+                });
+                return;
+            }
+            // if (company.users.length === 0) {
+            //     res.status(401).send({
+            //         message: "You Should Add Compan's User First",
+            //     });
+            //     return;
+            // }
+            await User.findOne({ username: userName }, async (err, sUser) => {
+                if (err) {
+                    res.status(500).send({
+                        message: err,
+                    });
+                    return;
+                }
+                if (!sUser) {
+                    res.status(404).send({
+                        message: "User Not Found",
+                    });
+                    return;
+                } else {
+                    if (!company.users.includes(sUser._id)) {
+                        company.users.push(sUser._id);
+                        sUser.company = company;
+                    } else {
+                        res.status(401).send({
+                            message: "User Aleady Assigned",
+                        });
+                        return;
+                    }
+                    await sUser.save((err, savedUser) => {
+                        if (err) {
+                            res.status(500).send({
+                                message: err,
+                            });
+                            return;
+                        }
+                        res.status(201).send({
+                            message: "User Assigned to Company",
+                        });
+                    });
+                    await company.save((err, savedCompany) => {
+                        if (err) {
+                            res.status(500).send({
+                                message: err,
+                            });
+                            return;
+                        }
+                        savedCompany;
+                    });
+                }
+            });
+            return company;
+        });
+    } else {
+        res.status(404).send({
+            message: "Invalid Id",
+        });
+    }
+};
 
 exports.getCompanyAllUsers = (req, res) => {
     res.status(200).json({

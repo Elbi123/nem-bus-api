@@ -13,5 +13,8 @@ router
     .delete(companyController.deleteCompany);
 
 router.route("/:companyId/buses").post(companyController.createCompanyBus);
+router
+    .route("/:companyId/users/:userName")
+    .patch(companyController.createCompanyUser);
 
 module.exports = router;

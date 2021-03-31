@@ -228,7 +228,7 @@ exports.deleteCompanyBus = (req, res) => {
 // Company User GETTERS AND SETTERS
 exports.createCompanyUser = async (req, res) => {
     const { companyId, userName } = req.params;
-    console.log(companyId, userName);
+    // console.log(companyId, userName);
     if (ObjectId.isValid(companyId)) {
         await Company.findOne({ _id: companyId }, async (err, company) => {
             if (err) {

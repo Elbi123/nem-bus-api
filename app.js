@@ -31,6 +31,7 @@ app.use(authRouter);
 app.use("/api/v1/voyages", voyageRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/companies", companyRouter);
+app.use("/api/v1/company", companyRouter);
 app.use("/api/v1/buses", busRouter);
 app.use("/api/v1/company", busRouter);
 app.use("/api/test", partialRouter);

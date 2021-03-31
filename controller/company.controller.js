@@ -1,4 +1,8 @@
 const Company = require("./../models/index.model").Company;
+const ObjectId = require("mongoose").Types.ObjectId;
+const db = require("./../models/index.model");
+Bus = db.Bus;
+User = db.User;
 
 // Company GETTERS AND SETTERS
 exports.getCompanies = async (req, res) => {
@@ -130,10 +134,83 @@ exports.getCompanyBus = (req, res) => {
     });
 };
 
-exports.createCompanyBus = (req, res) => {
-    res.status(200).json({
-        status: "success",
-    });
+exports.createCompanyBus = async (req, res) => {
+    const companyId = req.params.companyId;
+    const buses = req.body;
+    const newBus = new Bus(buses);
+    if (ObjectId.isValid(companyId)) {
+        await Company.findOne({ _id: companyId }, async (err, company) => {
+            if (err) {
+                res.status(500).send({
+                    message: err,
+                });
+                return;
+            }
+            if (!company) {
+                res.status(404).send({
+                    message: "Company not found",
+                });
+                return;
+            }
+            // if (company.users.length === 0) {
+            //     res.status(401).send({
+            //         message: "You Should Company's Buses First",
+            //     });
+            //     return;
+            // }
+            await Bus.findOne(
+                {
+                    $or: [
+                        { busId: req.body.busId },
+                        { busSideNumber: req.body.busSideNumber },
+                    ],
+                },
+                async (err, bus) => {
+                    if (err) {
+                        res.status(500).send({
+                            message: err,
+                        });
+                        return;
+                    }
+                    if (bus) {
+                        res.status(404).send({
+                            message: "Bus Already Existed",
+                        });
+                        return;
+                    } else {
+                        company.buses.push(newBus);
+                        newBus.company = company;
+                        await newBus.save((err, savedBus) => {
+                            if (err) {
+                                res.status(500).send({
+                                    message: err,
+                                });
+                                return;
+                            }
+                            savedBus;
+                            res.status(201).send({
+                                message: "Bus Registered",
+                            });
+                        });
+                        await company.save((err, savedCompany) => {
+                            if (err) {
+                                res.status(500).send({
+                                    message: err,
+                                });
+                                return;
+                            }
+                            savedCompany;
+                        });
+                    }
+                    return company;
+                }
+            );
+        });
+    } else {
+        res.status(500).send({
+            message: "Invalid ID is provided",
+        });
+    }
 };
 
 exports.updateCompanyBus = (req, res) => {
@@ -149,6 +226,7 @@ exports.deleteCompanyBus = (req, res) => {
 };
 
 // Company User GETTERS AND SETTERS
+
 exports.getCompanyAllUsers = (req, res) => {
     res.status(200).json({
         status: "success",

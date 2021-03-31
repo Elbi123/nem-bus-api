@@ -12,4 +12,6 @@ router
     .patch(companyController.updateCompany)
     .delete(companyController.deleteCompany);
 
+router.route("/:companyId/buses").post(companyController.createCompanyBus);
+
 module.exports = router;

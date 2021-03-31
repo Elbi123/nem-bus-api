@@ -7,6 +7,7 @@ const config = require("./../config/auth.config");
 const db = require("./../models/index.model");
 const User = db.User;
 const Role = db.Role;
+const Company = db.Company;
 
 verifyToken = (req, res, next) => {
     let token = req.headers["x-access-token"];
@@ -94,10 +95,61 @@ isSuperAdmin = (req, res, next) => {
     });
 };
 
+isUserOfCompany = (req, res, next) => {
+    const cId = req.params.companyId;
+    // console.log(cId);
+    const token = req.headers["x-access-token"];
+    if (!token) {
+        res.status(401).send({
+            message: "No Token Provided",
+        });
+        return;
+    }
+    const decode = jwt.verify(token, config.secret);
+    const userId = decode.id;
+    // console.log(userId);
+    // var token = jwt.sign({ id: user.id }, config.secret, {
+    //     expiresIn: 86400,
+    // });
+    Company.findById(cId).exec((err, company) => {
+        if (err) {
+            res.status(500).send({
+                message: err,
+            });
+            return;
+        }
+        User.find(
+            {
+                _id: { $in: company.users },
+            },
+            (err, users) => {
+                // console.log(users);
+                if (err) {
+                    res.status(500).send({
+                        message: err,
+                    });
+                    return;
+                }
+                for (let i = 0; i < users.length; i++) {
+                    // console.log(users[i].equals(userId));
+                    if (users[i].equals(userId)) {
+                        next();
+                        return;
+                    }
+                }
+                res.status(403).send({
+                    message: "Require Company's Admin Permission!",
+                });
+            }
+        );
+    });
+};
+
 const authJwt = {
     verifyToken,
     isAdmin,
     isSuperAdmin,
+    isUserOfCompany,
 };
 
 module.exports = authJwt;

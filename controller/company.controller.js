@@ -1,8 +1,9 @@
-const Company = require("./../models/index.model").Company;
+// const Company = require("./../models/index.model").Company;
 const ObjectId = require("mongoose").Types.ObjectId;
 const db = require("./../models/index.model");
 Bus = db.Bus;
 User = db.User;
+Company = db.Company;
 
 // Company GETTERS AND SETTERS
 exports.getCompanies = async (req, res) => {
@@ -123,13 +124,51 @@ exports.deleteCompany = async (req, res) => {
 
 // Company Bus GETTERS AND SETTERS
 exports.getCompanyAllBus = async (req, res) => {
-    res.status(200).json({
-        status: "success",
-    });
+    try {
+        const name = req.params.name;
+        console.log(name);
+        await Company.findOne({ name: name })
+            .populate("buses", "-__v -company")
+            .exec((err, company) => {
+                const numberOfBuses = company.buses.length;
+                if (err) {
+                    res.status(500).send({
+                        message: err,
+                    });
+                    return;
+                }
+                if (!company) {
+                    res.status(404).send({
+                        status: "fail",
+                        message: "Company Not Found",
+                    });
+                    return;
+                }
+                if (numberOfBuses === 0) {
+                    res.status(404).send({
+                        status: "fail",
+                        totalNumberOfBuses: numberOfBuses,
+                        message: "No Bus Yet Registered",
+                    });
+                    return;
+                }
+                res.status(200).send({
+                    status: "success",
+                    totalNumberOfBuses: numberOfBuses,
+                    buses: company.buses,
+                });
+                return;
+            });
+    } catch (err) {
+        res.status(401).json({
+            status: "fail",
+            message: err,
+        });
+    }
 };
 
-exports.getCompanyBus = (req, res) => {
-    res.status(200).json({
+exports.getCompanyBus = async (req, res) => {
+    res.send(200).send({
         status: "success",
     });
 };

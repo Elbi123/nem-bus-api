@@ -14,11 +14,16 @@ router
     .delete(companyController.deleteCompany);
 
 router
-    .route("/:companyId/buses")
+    .route("/:name/buses")
+    .get(companyController.getCompanyAllBus)
     .post(
         [authJwt.verifyToken, authJwt.isUserOfCompany, authJwt.isAdmin],
         companyController.createCompanyBus
     );
+router
+    .route("/:name/buses/:busId")
+    .get(companyController.getCompanyBus)
+    .delete(companyController.deleteCompanyBus);
 router
     .route("/:companyId/users/:userName")
     .patch(companyController.createCompanyUser);

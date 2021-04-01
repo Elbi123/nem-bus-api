@@ -8,6 +8,7 @@ router
     .route("/")
     .get(companyController.getCompanies)
     .post(companyController.createCompany);
+router.route("/all").get(companyController.getAllCompanyBuses);
 router
     .route("/:id")
     .patch(companyController.updateCompany)
@@ -23,7 +24,9 @@ router
 router
     .route("/:name/buses/:busId")
     .get(companyController.getCompanyBus)
-    .delete(companyController.deleteCompanyBus);
+    .delete(companyController.deleteCompanyBus)
+    .patch(companyController.updateCompanyBus);
+
 router
     .route("/:companyId/users/:userName")
     .patch(companyController.createCompanyUser);

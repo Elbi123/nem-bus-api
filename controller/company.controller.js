@@ -128,7 +128,7 @@ exports.getCompanyAllBus = async (req, res) => {
         const name = req.params.name;
         console.log(name);
         await Company.findOne({ name: name })
-            .populate("buses", "-__v -company")
+            .populate("buses", "-__v")
             .exec((err, company) => {
                 const numberOfBuses = company.buses.length;
                 if (err) {
@@ -306,13 +306,100 @@ exports.createCompanyBus = async (req, res) => {
     }
 };
 
-exports.updateCompanyBus = (req, res) => {
-    res.status(200).json({
-        status: "success",
-    });
+exports.getAllCompanyBuses = async (req, res) => {
+    try {
+        const companies = await Company.find({}).populate("buses");
+        res.status(200).send({
+            companies,
+        });
+    } catch (err) {
+        res.status(500).send({
+            status: "fail",
+            message: err,
+        });
+    }
 };
 
-exports.deleteCompanyBus = (req, res) => {
+exports.updateCompanyBus = async (req, res) => {
+    try {
+        const name = req.params.name;
+        const busId = req.params.busId;
+        const updatedBus = req.body;
+        await Company.findOne({ name: name }).exec(async (err, company) => {
+            if (err) {
+                res.status(500).send({
+                    status: "fail",
+                    message: err,
+                });
+                return;
+            }
+            if (!company) {
+                res.status(404).send({
+                    status: "fail",
+                    message: "Company Not Found",
+                });
+                return;
+            }
+            if (ObjectId.isValid(busId)) {
+                await Bus.findOne({ _id: busId })
+                    .populate("company")
+                    .exec(async (err, bus) => {
+                        if (err) {
+                            res.status(500).send({
+                                status: "fail",
+                                message: err,
+                            });
+                            return;
+                        }
+                        if (!bus) {
+                            res.status(404).send({
+                                status: "fail",
+                                message: `Bus Not Found`,
+                            });
+                            return;
+                        }
+                        if (
+                            bus.company.buses.includes(busId) &&
+                            bus.company.name === name
+                        ) {
+                            bus.updateOne(updatedBus, (err) => {
+                                if (err) {
+                                    res.status(500).send({
+                                        status: "fail",
+                                        message: "Bus Already Existed",
+                                    });
+                                    return;
+                                }
+                                res.status(201).send({
+                                    status: "success",
+                                    savedBus: "Successfully Updated Bus",
+                                });
+                                return;
+                            });
+                        } else {
+                            res.status(500).send({
+                                message: "Company Has No Such Bus",
+                            });
+                            return;
+                        }
+                    });
+            } else {
+                res.status(501).send({
+                    status: "fail",
+                    message: "Invalid ID Provided",
+                });
+            }
+        });
+    } catch (err) {
+        res.status(500).send({
+            status: "fail",
+            message: err,
+        });
+        return err;
+    }
+};
+
+exports.deleteCompanyBus = async (req, res) => {
     res.status(200).json({
         status: "success",
     });

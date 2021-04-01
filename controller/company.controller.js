@@ -168,9 +168,69 @@ exports.getCompanyAllBus = async (req, res) => {
 };
 
 exports.getCompanyBus = async (req, res) => {
-    res.send(200).send({
-        status: "success",
-    });
+    try {
+        const { name, busId } = req.params;
+        console.log(name, busId);
+        await Bus.findOne({ busId: busId }).exec(async (err, bus) => {
+            if (err) {
+                res.status(500).send({
+                    status: "fail",
+                    message: err,
+                });
+                return;
+            }
+            if (!bus) {
+                res.status(404).send({
+                    status: "fail",
+                    message: `Bus ${busId} is Not Found Not Found At All`,
+                });
+                return;
+            }
+            await Company.findOne({ name: name })
+                .populate("buses", "-__v")
+                .exec(async (err, company) => {
+                    if (err) {
+                        res.status(500).send({
+                            status: "fail",
+                            message: err,
+                        });
+                        return;
+                    }
+                    if (!company) {
+                        res.status(404).send({
+                            status: "fail",
+                            message: "No Company Found At All",
+                        });
+                        return;
+                    }
+                    // if (!bus && !company) {
+                    //     res.status(404).send({
+                    //         status: "fail",
+                    //         message: "Both Compaany And Bus Not Found",
+                    //     });
+                    // }
+                    const buss = company.buses.filter((el) => {
+                        return el.busId === busId;
+                    });
+                    if (buss.length > 0) {
+                        res.status(200).send({
+                            status: "success",
+                            bus: buss[0],
+                        });
+                    } else if (buss.length === 0) {
+                        res.status(404).send({
+                            status: "fail",
+                            message: `Bus ${busId} Not Found For Company`,
+                        });
+                    }
+                });
+        });
+    } catch (err) {
+        res.status(400).send({
+            status: "fail",
+            message: err,
+        });
+    }
 };
 
 exports.createCompanyBus = async (req, res) => {
@@ -191,12 +251,6 @@ exports.createCompanyBus = async (req, res) => {
                 });
                 return;
             }
-            // if (company.users.length === 0) {
-            //     res.status(401).send({
-            //         message: "You Should Company's Buses First",
-            //     });
-            //     return;
-            // }
             await Bus.findOne(
                 {
                     $or: [

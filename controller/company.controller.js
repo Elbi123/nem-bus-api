@@ -234,9 +234,11 @@ exports.getCompanyBus = async (req, res) => {
 };
 
 exports.createCompanyBus = async (req, res) => {
-    const companyId = req.params.companyId;
+    const companyId = req.params.name;
+    console.log(companyId);
     const buses = req.body;
     const newBus = new Bus(buses);
+    console.log(ObjectId.isValid(companyId));
     if (ObjectId.isValid(companyId)) {
         await Company.findOne({ _id: companyId }, async (err, company) => {
             if (err) {
@@ -400,15 +402,97 @@ exports.updateCompanyBus = async (req, res) => {
 };
 
 exports.deleteCompanyBus = async (req, res) => {
-    res.status(200).json({
-        status: "success",
-    });
+    try {
+        const name = req.params.name;
+        const busId = req.params.busId;
+        console.log(name, busId);
+        await Company.findOne({ name: name }).exec(async (err, company) => {
+            if (err) {
+                res.status(500).send({
+                    status: "fail",
+                    message: err,
+                });
+                return;
+            }
+            if (!company) {
+                res.status(404).send({
+                    status: "fail",
+                    message: "Company Not Found",
+                });
+                return;
+            }
+            if (ObjectId.isValid(busId)) {
+                await Bus.findOne({ _id: busId })
+                    .populate("company")
+                    .exec(async (err, bus) => {
+                        if (err) {
+                            res.status(500).send({
+                                status: "fail",
+                                message: err,
+                            });
+                            return;
+                        }
+                        if (!bus) {
+                            res.status(404).send({
+                                status: "fail",
+                                message: `Bus Not Found`,
+                            });
+                            return;
+                        }
+                        if (
+                            bus.company.buses.includes(busId) &&
+                            bus.company.name === name
+                        ) {
+                            const nBusIds = bus.company.buses.filter((el) => {
+                                return !el.equals(busId);
+                            });
+                            bus.company.buses = nBusIds;
+                            company.buses = nBusIds;
+                            company.save((err) => {
+                                if (err) {
+                                    return res.status(500).send({
+                                        status: "fail",
+                                        message: err,
+                                    });
+                                }
+                            });
+                            bus.remove((err) => {
+                                if (err) {
+                                    return res.status(500).send({
+                                        status: "fail",
+                                        message: err,
+                                    });
+                                }
+                                return res.status(200).send({
+                                    status: "success",
+                                    message: "Bus Deleted Successfully",
+                                });
+                            });
+                        } else {
+                            res.status(500).send({
+                                message: "Company Has No Such Bus",
+                            });
+                            return;
+                        }
+                    });
+            } else {
+                res.status(501).send({
+                    status: "fail",
+                    message: "Invalid ID Provided",
+                });
+            }
+        });
+    } catch (err) {
+        res.status(500).send({
+            status: "fail",
+            message: err,
+        });
+    }
 };
 
 // Company User GETTERS AND SETTERS
 exports.createCompanyUser = async (req, res) => {
     const { companyId, userName } = req.params;
-    // console.log(companyId, userName);
     if (ObjectId.isValid(companyId)) {
         await Company.findOne({ _id: companyId }, async (err, company) => {
             if (err) {

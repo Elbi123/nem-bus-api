@@ -96,7 +96,7 @@ isSuperAdmin = (req, res, next) => {
 };
 
 isUserOfCompany = (req, res, next) => {
-    const cId = req.params.companyId;
+    const cId = req.params.name;
     // console.log(cId);
     const token = req.headers["x-access-token"];
     if (!token) {
@@ -111,38 +111,56 @@ isUserOfCompany = (req, res, next) => {
     // var token = jwt.sign({ id: user.id }, config.secret, {
     //     expiresIn: 86400,
     // });
-    Company.findById(cId).exec((err, company) => {
-        if (err) {
-            res.status(500).send({
-                message: err,
-            });
-            return;
-        }
-        User.find(
-            {
-                _id: { $in: company.users },
-            },
-            (err, users) => {
-                // console.log(users);
-                if (err) {
-                    res.status(500).send({
-                        message: err,
-                    });
-                    return;
-                }
-                for (let i = 0; i < users.length; i++) {
-                    // console.log(users[i].equals(userId));
-                    if (users[i].equals(userId)) {
-                        next();
+    if (ObjectId.isValid(cId)) {
+        Company.findById(cId).exec((err, company) => {
+            if (err) {
+                res.status(500).send({
+                    message: err,
+                });
+                return;
+            }
+            if (!company) {
+                res.status(500).send({
+                    message: "Company Not Found",
+                });
+                return;
+            }
+            User.find(
+                {
+                    _id: { $in: company.users },
+                },
+                (err, users) => {
+                    // console.log(users);
+                    if (err) {
+                        res.status(500).send({
+                            message: err,
+                        });
                         return;
                     }
+                    if (!users) {
+                        res.status(500).send({
+                            message: "Company User Not Found",
+                        });
+                        return;
+                    }
+                    for (let i = 0; i < users.length; i++) {
+                        if (users[i].equals(userId)) {
+                            next();
+                            return;
+                        }
+                    }
+                    res.status(403).send({
+                        message: "Require Company's Admin Permission!",
+                    });
                 }
-                res.status(403).send({
-                    message: "Require Company's Admin Permission!",
-                });
-            }
-        );
-    });
+            );
+        });
+    } else {
+        res.status(500).send({
+            status: "fail",
+            message: "Invalid Id Provided",
+        });
+    }
 };
 
 const authJwt = {

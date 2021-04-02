@@ -406,7 +406,7 @@ exports.deleteCompanyBus = async (req, res) => {
         const name = req.params.name;
         const busId = req.params.busId;
         console.log(name, busId);
-        await Company.findOne({ name: name }).exec(async (err, company) => {
+        await Company.findOne({ _id: name }).exec(async (err, company) => {
             if (err) {
                 res.status(500).send({
                     status: "fail",
@@ -439,10 +439,7 @@ exports.deleteCompanyBus = async (req, res) => {
                             });
                             return;
                         }
-                        if (
-                            bus.company.buses.includes(busId) &&
-                            bus.company.name === name
-                        ) {
+                        if (bus.company.buses.includes(busId)) {
                             const nBusIds = bus.company.buses.filter((el) => {
                                 return !el.equals(busId);
                             });

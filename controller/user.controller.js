@@ -1,5 +1,6 @@
 const db = require("./../models/index.model");
 const Role = db.Role;
+const User = db.User;
 
 exports.allAccess = (req, res) => {
     res.status(200).send("Public Access");
@@ -17,35 +18,72 @@ exports.superAdmin = (req, res) => {
     res.status(200).send("SuperAdmin Board");
 };
 
-exports.getAllUser = (req, res) => {
-    res.status(500).json({
-        status: "error",
-        message: "This route is not defined yet",
-    });
+exports.getAllUser = async (req, res) => {
+    try {
+        await User.find({})
+            .populate("roles", "-__v -_id")
+            .select("username phoneNumber createdAt")
+            .sort({ createdAt: -1 })
+            .exec((err, users) => {
+                if (err) {
+                    res.status(500).json({
+                        status: "fail",
+                        message: err,
+                    });
+                    return;
+                }
+                if (!users) {
+                    res.status(404).json({
+                        status: "fail",
+                        message: "Users doesn't exist",
+                    });
+                    return;
+                }
+                res.status(200).json({
+                    status: "success",
+                    users,
+                });
+                return;
+            });
+    } catch (err) {
+        res.status(500).json({
+            status: "error",
+            message: err,
+        });
+    }
 };
 
-exports.getUser = (req, res) => {
-    res.status(500).json({
-        status: "error",
-        message: "This route is not defined yet",
-    });
-};
-
-exports.createUser = (req, res) => {
-    res.status(500).json({
-        status: "error",
-        message: "This route is not defined yet",
-    });
-};
-
-exports.updateUser = (req, res) => {
-    res.status(500).json({
-        status: "error",
-        message: "This route is not defined yet",
-    });
-};
-
-exports.deleteUser = (req, res) => {
+exports.getUser = async (req, res) => {
+    const userId = req.params.id;
+    await User.findOne({ _id: userId })
+        .populate("roles", "-__v -_id")
+        .select("username phoneNumber createdAt -_id")
+        .then((err, user) => {
+            if (err) {
+                res.status(500).json({
+                    status: "fail",
+                    message: err,
+                });
+                return;
+            }
+            if (!user) {
+                res.status(500).json({
+                    status: "fail",
+                    message: "User not found",
+                });
+                return;
+            }
+            res.status(500).json({
+                status: "success",
+                user,
+            });
+        })
+        .catch((err) => {
+            res.status(500).json({
+                status: "fail",
+                message: err,
+            });
+        });
     res.status(500).json({
         status: "error",
         message: "This route is not defined yet",

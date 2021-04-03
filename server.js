@@ -5,6 +5,9 @@ dotenv.config({
     path: "./config.env",
 });
 
+// Nothing is checked
+// git test branching
+
 connectDB();
 
 // Third party middleware

@@ -30,6 +30,7 @@ const company = mongoose.Schema(
                 required: false,
             },
         },
+        drivers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Driver" }],
         buses: [{ type: mongoose.Schema.Types.ObjectId, ref: "Bus" }],
         users: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
         voyages: [{ type: mongoose.Schema.Types.ObjectId, ref: "Voyage" }],

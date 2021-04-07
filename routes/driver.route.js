@@ -4,13 +4,13 @@ const router = express.Router();
 
 router.route("/drivers").get(driverController.getAllCompanyDrivers);
 router.route(
-    ":/companyId/drivers/:driverId",
+    "/:companyId/drivers/:driverId",
     driverController.getDriversOfCompany
 );
 
-router.route(":/companyId/drivers").post(driverController.createCompanyDriver);
+router.route("/:companyId/drivers").post(driverController.createCompanyDriver);
 router
-    .route(":/companyId/drivers/:driverId")
+    .route("/:companyId/drivers/:driverId")
     .patch(driverController.updateCompanyDriver)
     .delete(driverController.deleteCompanyDriver);
 

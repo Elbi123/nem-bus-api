@@ -9,16 +9,16 @@ const driver = mongoose.Schema({
         type: String,
         required: true,
     },
+    age: {
+        type: Number,
+        required: true,
+    },
     phoneNumber: {
         type: String,
         required: true,
     },
     licenseId: {
         type: String,
-        required: true,
-    },
-    age: {
-        type: Number,
         required: true,
     },
     bus: { type: mongoose.Schema.Types.ObjectId, ref: "Bus" },

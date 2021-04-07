@@ -4,25 +4,133 @@ Bus = db.Bus;
 Driver = db.Driver;
 Company = db.Company;
 
-exports.getAllCompanyDrivers = (req, res) => {
-    res.status(200).json({
-        status: "success",
-        message: "Everything is fine",
-    });
+exports.getAllCompanyDrivers = async (req, res) => {
+    try {
+        await Driver.find({})
+            .populate(
+                "company",
+                "-__v -address -_id -updatedAt -drivers -users -buses -voyages"
+            )
+            .select("firstName lastName phoneNumber age licenseId -_id")
+            .exec((err, drivers) => {
+                if (err) {
+                    return res.status(500).json({
+                        status: "fail",
+                        message: err,
+                    });
+                }
+                res.status(200).json({
+                    status: "success",
+                    drivers: drivers,
+                });
+            });
+    } catch (err) {
+        return res.json({
+            status: "fail",
+            message: err,
+        });
+    }
 };
 
-exports.getDriversOfCompany = (req, res) => {
-    res.status(200).json({
-        status: "success",
-        message: "Everything is fine",
-    });
+exports.getDriversOfCompany = async (req, res) => {
+    try {
+        const companyName = req.params.companyName;
+        await Company.findOne({ name: companyName })
+            .populate("drivers", "-__v")
+            .exec((err, company) => {
+                if (err) {
+                    return res.status(500).json({
+                        status: "fail",
+                        message: err,
+                    });
+                }
+                if (!company) {
+                    return res.status(404).json({
+                        status: "fail",
+                        message: `Company ${companyName} Not Found`,
+                    });
+                }
+                const numberOfDrivers = company.drivers.length;
+                if (numberOfDrivers === 0) {
+                    return res.status(404).json({
+                        status: "fail",
+                        totalNumberOfDrivers: numberOfDrivers,
+                        message: "No Bus Yet Registered",
+                    });
+                }
+                res.status(200).json({
+                    status: "success",
+                    totalNumberOfDrivers: numberOfDrivers,
+                    drivers: company.drivers,
+                });
+            });
+    } catch (err) {
+        return res.json({
+            status: "fail",
+            message: "Something Bad Happened",
+        });
+    }
 };
 
-exports.getCompanyDriver = (req, res) => {
-    res.status(200).json({
-        status: "success",
-        message: "Everything is fine",
-    });
+exports.getCompanyDriver = async (req, res) => {
+    const { companyName, driverName } = req.params;
+    const nDriver = driverName.split(" ");
+    const firstName = nDriver[0];
+    const lastName = nDriver[1];
+    try {
+        await Driver.findOne({
+            $and: [{ firstName: firstName }, { lastName: lastName }],
+        }).exec((err, driver) => {
+            if (err) {
+                return res.status(500).json({
+                    status: "fail",
+                    message: err,
+                });
+            }
+            if (!driver) {
+                return res.status(404).json({
+                    status: "fail",
+                    message: `Driver ${firstName} ${lastName} is not found`,
+                });
+            }
+            Company.findOne({ name: companyName })
+                .populate("drivers", "-__v")
+                .exec((err, company) => {
+                    if (err) {
+                        return res.status(500).json({
+                            status: "fail",
+                            message: err,
+                        });
+                    }
+                    if (!company) {
+                        return res.status(404).json({
+                            status: "fail",
+                            message: `Company ${companyName} Not Found`,
+                        });
+                    }
+                    const fDriver = company.drivers.filter((driver) => {
+                        const lDriver = `${driver.firstName} ${driver.lastName}`;
+                        return lDriver === driverName;
+                    });
+                    if (fDriver.length > 0) {
+                        return res.status(200).json({
+                            status: "success",
+                            message: fDriver[0],
+                        });
+                    } else if (fDriver.length === 0) {
+                        return res.status(404).json({
+                            status: "fail",
+                            message: `Driver ${driverName} Not Found For Company`,
+                        });
+                    }
+                });
+        });
+    } catch (err) {
+        return res.json({
+            status: "fail",
+            message: "Something Bad Happened",
+        });
+    }
 };
 
 exports.createCompanyDriver = async (req, res) => {

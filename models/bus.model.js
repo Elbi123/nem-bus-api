@@ -21,6 +21,10 @@ const bus = mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "Company",
         },
+        driver: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Driver",
+        },
     },
     {
         timestamps: true,

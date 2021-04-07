@@ -130,7 +130,7 @@ exports.getCompanyAllBus = async (req, res) => {
         await Company.findOne({ name: name })
             .populate("buses", "-__v")
             .exec((err, company) => {
-                const numberOfBuses = company.buses.length;
+                // const numberOfBuses = company.buses.length;
                 if (err) {
                     res.status(500).send({
                         message: err,
@@ -144,6 +144,7 @@ exports.getCompanyAllBus = async (req, res) => {
                     });
                     return;
                 }
+                const numberOfBuses = company.buses.length;
                 if (numberOfBuses === 0) {
                     res.status(404).send({
                         status: "fail",
@@ -405,7 +406,6 @@ exports.deleteCompanyBus = async (req, res) => {
     try {
         const name = req.params.name;
         const busId = req.params.busId;
-        console.log(name, busId);
         await Company.findOne({ _id: name }).exec(async (err, company) => {
             if (err) {
                 res.status(500).send({

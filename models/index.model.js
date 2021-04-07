@@ -9,6 +9,7 @@ db.User = require("./user.model");
 db.Company = require("./company.model");
 db.Voyage = require("./voyage.model");
 db.Bus = require("./bus.model");
+db.Driver = require("./driver.model");
 db.Role = require("./role.model");
 db.ROLE = ["user", "admin", "super-admin"];
 

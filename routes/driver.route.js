@@ -11,7 +11,7 @@ router
 
 router.route("/:companyId/drivers").post(driverController.createCompanyDriver);
 router
-    .route("/:companyId/drivers/:driverId")
+    .route("/:companyName/drivers/:driverId")
     .patch(driverController.updateCompanyDriver)
     .delete(driverController.deleteCompanyDriver);
 

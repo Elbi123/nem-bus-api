@@ -223,14 +223,78 @@ exports.createCompanyDriver = async (req, res) => {
     }
 };
 
-exports.updateCompanyDriver = (req, res) => {
-    res.status(200).json({
-        status: "success",
-        message: "Everything is fine",
-    });
+exports.updateCompanyDriver = async (req, res) => {
+    try {
+        const { companyName, driverId } = req.params;
+        const updatedDriver = req.body;
+        await Company.findOne({ name: companyName }).exec((err, company) => {
+            if (err) {
+                return status(500).json({
+                    status: "fail",
+                    message: err,
+                });
+            }
+            if (!company) {
+                return res.status(404).json({
+                    status: "fail",
+                    message: `Company ${companyName} Not Found`,
+                });
+            }
+            if (ObjectId.isValid(driverId)) {
+                Driver.findOne({ _id: driverId })
+                    .populate("company")
+                    .exec((err, driver) => {
+                        if (err) {
+                            return res.status(500).json({
+                                status: "fail",
+                                message: err,
+                            });
+                        }
+                        if (!driver) {
+                            return res.status(404).json({
+                                status: "fail",
+                                message: "Bus Not Found",
+                            });
+                        }
+                        if (
+                            driver.company.drivers.includes(driverId) &&
+                            driver.company.name === companyName
+                        ) {
+                            driver.updateOne(updatedDriver, (err) => {
+                                if (err) {
+                                    return res.status(500).json({
+                                        status: "fail",
+                                        message: "Driver Already Existed",
+                                    });
+                                }
+                                res.status(201).json({
+                                    status: "success",
+                                    message: "Successfully Updated Driver",
+                                });
+                            });
+                        } else {
+                            return res.status(404).json({
+                                status: "fail",
+                                message: "Company Has No Such Driver",
+                            });
+                        }
+                    });
+            } else {
+                return res.status(401).json({
+                    status: "fail",
+                    message: "Invalid ID Provided",
+                });
+            }
+        });
+    } catch (err) {
+        return res.json({
+            status: "fail",
+            message: "Something Bad Happened",
+        });
+    }
 };
 
-exports.deleteCompanyDriver = (req, res) => {
+exports.deleteCompanyDriver = async (req, res) => {
     res.status(200).json({
         status: "success",
         message: "Everything is fine",

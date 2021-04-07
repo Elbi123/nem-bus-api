@@ -406,7 +406,6 @@ exports.deleteCompanyBus = async (req, res) => {
     try {
         const name = req.params.name;
         const busId = req.params.busId;
-        console.log(name, busId);
         await Company.findOne({ _id: name }).exec(async (err, company) => {
             if (err) {
                 res.status(500).send({

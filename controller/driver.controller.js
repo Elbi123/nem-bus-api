@@ -295,8 +295,81 @@ exports.updateCompanyDriver = async (req, res) => {
 };
 
 exports.deleteCompanyDriver = async (req, res) => {
-    res.status(200).json({
-        status: "success",
-        message: "Everything is fine",
-    });
+    try {
+        const { companyName, driverId } = req.params;
+        if (ObjectId.isValid(companyName) && ObjectId.isValid(driverId)) {
+            await Company.findOne({ _id: companyName }).exec((err, company) => {
+                if (err) {
+                    return res.status(500).json({
+                        status: "fail",
+                        message: err,
+                    });
+                }
+                if (!company) {
+                    return res.status(404).json({
+                        status: "fail",
+                        message: "Company Not Found",
+                    });
+                }
+                Driver.findOne({ _id: driverId })
+                    .populate(
+                        "company",
+                        "-__v -users -voyages -buses -address -createdAt -updatedAt"
+                    )
+                    .exec((err, driver) => {
+                        if (err) {
+                            return res.status(500).json({
+                                status: "fail",
+                                message: err,
+                            });
+                        }
+                        if (!driver) {
+                            return res.status(404).json({
+                                status: "fail",
+                                message: "Driver Not Found",
+                            });
+                        }
+                        if (driver.company.drivers.includes(driverId)) {
+                            const nDriverIds = driver.company.drivers.filter(
+                                (driver) => {
+                                    return !driver.equals(driverId);
+                                }
+                            );
+                            driver.company.drivers = nDriverIds;
+                            company.drivers = nDriverIds;
+                            company.save((err) => {
+                                if (err) {
+                                    return res.status(500).json({
+                                        status: "fail",
+                                        message: err,
+                                    });
+                                }
+                            });
+                            driver.remove((err) => {
+                                if (err) {
+                                    return res.status(500).json({
+                                        status: "fail",
+                                        message: err,
+                                    });
+                                }
+                                return res.status(200).json({
+                                    status: "fail",
+                                    message: "Driver Deleted Successfully",
+                                });
+                            });
+                        }
+                    });
+            });
+        } else {
+            return res.status(401).json({
+                status: "fail",
+                message: "Invalid ID Provided",
+            });
+        }
+    } catch (err) {
+        return res.json({
+            status: "fail",
+            message: "Something Bad Happened",
+        });
+    }
 };

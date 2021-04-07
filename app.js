@@ -9,6 +9,7 @@ const voyageRouter = routers.VoyageRoute;
 const userRouter = routers.UserRoute;
 const companyRouter = routers.CompanyRoute;
 const busRouter = routers.BusRoute;
+const driverRoute = routers.DriverRouter;
 const partialRouter = routers.PartialRoute;
 const authRouter = routers.AuthRoute;
 
@@ -33,6 +34,7 @@ app.use("/api/v1/users", userRouter);
 // app.use("/api/v1/user", userRouter);
 app.use("/api/v1/companies", companyRouter);
 app.use("/api/v1/company", companyRouter);
+app.use("/api/v1/company", driverRoute);
 app.use("/api/v1/buses", busRouter);
 app.use("/api/v1/company", busRouter);
 app.use("/api/test", partialRouter);

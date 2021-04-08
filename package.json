@@ -4,7 +4,7 @@
     "description": "bus-api to be consumed by flutter app",
     "main": "app.js",
     "scripts": {
-        "start:dev": "nodemon server.js",
+        "start": "node server.js",
         "start:prod": "NODE_ENV=production nodemon server.js"
     },
     "author": "bus-api team",

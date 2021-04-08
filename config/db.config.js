@@ -7,11 +7,15 @@ dotenv.config({
     path: "./config.env",
 });
 
-const db = process.env.DATABASE_LOCAL;
+// const db = process.env.DATABASE_LOCAL;
+const db_remote = process.env.DATABASE_NAME.replace(
+    "<password>",
+    process.env.DATABASE_PASSWORD
+);
 
 const connetDB = async () => {
     try {
-        const connectionString = await mongoose.connect(db, {
+        const connectionString = await mongoose.connect(db_remote, {
             useNewUrlParser: true,
             useCreateIndex: true,
             useFindAndModify: false,

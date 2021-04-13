@@ -2,12 +2,17 @@ const mongoose = require("mongoose");
 
 const voyageSchema = new mongoose.Schema(
     {
-        name: {
+        voyageUniqueID: {
+            type: String,
+            unique: true,
+        },
+        origin: {
             type: String,
             require: true,
-            unique: true,
-            min: [10, "Too few characters"],
-            max: [40, "Too long characters"],
+        },
+        destination: {
+            type: String,
+            require: true,
         },
         departure: {
             type: Date,
@@ -16,16 +21,11 @@ const voyageSchema = new mongoose.Schema(
         arrival: {
             type: Date,
         },
-        price: {
-            type: Number,
-            required: true,
-        },
         isAvailable: {
             type: Boolean,
             default: true,
-            required: true,
         },
-        companies: [{ type: mongoose.Schema.Types.ObjectId, ref: "Company" }],
+        company: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
     },
     { timestamps: true }
 );

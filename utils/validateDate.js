@@ -38,8 +38,7 @@ exports.validateDate = (inputDate) => {
 };
 
 exports.compareTwoDates = (departure, arrival) => {
-    return (
-        arrival.getTime() == departure.getTime() ||
-        arrival.getTime() > departure.getTime()
-    );
+    let arr = new Date(arrival);
+    let depar = new Date(departure);
+    return arr.getTime() == depar.getTime() || arr.getTime() > depar.getTime();
 };

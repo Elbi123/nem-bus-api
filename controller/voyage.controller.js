@@ -53,6 +53,7 @@ exports.getVoyage = async (req, res) => {
     }
 };
 
+// CREATE COMPANY VOYAGE
 exports.createCompanyVoyage = async (req, res) => {
     const companyId = req.params.companyId;
     const origin = req.body.origin;
@@ -111,11 +112,11 @@ exports.createCompanyVoyage = async (req, res) => {
                                 }
                             );
                             if (filteredVoyage.length > 0) {
-                                res.status(401).json({
+                                return res.status(401).json({
                                     status: "fail",
                                     message: "Voyage Already Existed",
                                 });
-                            } else {
+                            } else if (filteredVoyage.length === 0) {
                                 company.voyages.push(newVoyage);
                                 newVoyage.company = company;
 
@@ -169,6 +170,186 @@ exports.createCompanyVoyage = async (req, res) => {
             status: "fail",
             message: "Invalid Date Format",
         });
+    }
+};
+
+// UPDATE COMPANY VOYAGE
+exports.updateCompanyVoyage = async (req, res) => {
+    const companyId = req.params.companyId;
+    const voyageId = req.params.voyageId;
+    if (req.body.departure || req.body.arrival) {
+        const validDepartureDate = validateDate.validateDate(
+            req.body.departure
+        );
+        const validArrivalDate = validateDate.validateDate(req.body.arrival);
+        const stillValidDate = validateDate.compareTwoDates(
+            req.body.departure,
+            req.body.arrival
+        );
+        if (!validArrivalDate || !validDepartureDate) {
+            return res.status(401).json({
+                status: "fail",
+                message: "Invalid Date Format",
+            });
+        }
+        if (!stillValidDate) {
+            return res.status(401).json({
+                status: "fail",
+                message: "Please Provide Valid Departure and Arrival Date",
+            });
+        }
+        if (ObjectId.isValid(voyageId) && ObjectId.isValid(companyId)) {
+            try {
+                const newVoyage = req.body;
+
+                await Company.findOne({ _id: companyId }).exec(
+                    (err, company) => {
+                        if (err) {
+                            return res.status(500).json({
+                                status: "fail",
+                                message: err,
+                            });
+                        }
+                        if (!company) {
+                            return res.status(404).json({
+                                status: "fail",
+                                message: "Company Not Found",
+                            });
+                        }
+                        Voyage.findOne({ _id: voyageId })
+                            .populate(
+                                "company",
+                                "-__v -users -buses -drivers -address -createdAt -updatedAt"
+                            )
+                            .exec((err, voyage) => {
+                                if (err) {
+                                    return res.status(500).json({
+                                        status: "fail",
+                                        message: err,
+                                    });
+                                }
+                                if (!voyage) {
+                                    return res.status(404).json({
+                                        status: "fail",
+                                        message: "Voyage Not Found",
+                                    });
+                                }
+                                if (
+                                    voyage.company.voyages.includes(voyageId) &&
+                                    voyage.company._id.equals(companyId)
+                                ) {
+                                    voyage.updateOne(newVoyage, (err) => {
+                                        if (err) {
+                                            return res.status(500).json({
+                                                status: "fail",
+                                                message:
+                                                    "Voyage Already Existed",
+                                            });
+                                        }
+                                        res.status(201).json({
+                                            status: "success",
+                                            message:
+                                                "Successfully Updated Voyage",
+                                        });
+                                    });
+                                } else {
+                                    return res.status(404).json({
+                                        status: "fail",
+                                        message: "Company Has Not Such Voyage",
+                                    });
+                                }
+                            });
+                    }
+                );
+            } catch (err) {
+                return res.status(404).json({
+                    status: "fail",
+                    message: err,
+                });
+            }
+        } else {
+            return res.json({
+                status: "fail",
+                message: "Invalid ID Provided",
+            });
+        }
+    }
+};
+
+// DELETE COMPANY VOYAGE
+exports.deleteCompanyVoyage = async (req, res) => {
+    const { companyId, voyageId } = req.params;
+    if (ObjectId.isValid(companyId) && ObjectId.isValid(voyageId)) {
+        try {
+            await Company.findOne({ _id: companyId }).exec((err, company) => {
+                if (err) {
+                    return res.status(500).json({
+                        status: "fail",
+                        message: err,
+                    });
+                }
+                if (!company) {
+                    return res.status(404).json({
+                        status: "fail",
+                        message: "Company Not Found",
+                    });
+                }
+                Voyage.findOne({ _id: voyageId })
+                    .populate(
+                        "company",
+                        "-__v -buses -address -createdAt -updatedAt -users -drivers -createdAt -updatedAt"
+                    )
+                    .exec((err, voyage) => {
+                        if (err) {
+                            return res.status(500).json({
+                                status: "fail",
+                                message: err,
+                            });
+                        }
+                        if (!voyage) {
+                            return res.status(404).json({
+                                status: "fail",
+                                message: "Voyage Not Found",
+                            });
+                        }
+                        // console.log(voyage.company.voyages.includes(voyageId));
+                        if (voyage.company.voyages.includes(voyageId)) {
+                            const nVoyageIds = voyage.company.voyages.filter(
+                                (voyage) => {
+                                    return !voyage.equals(voyageId);
+                                }
+                            );
+                            voyage.company.voyages = nVoyageIds;
+                            company.voyages = nVoyageIds;
+                            company.save((err) => {
+                                if (err) {
+                                    return res.status(500).json({
+                                        status: "fail",
+                                        message: err,
+                                    });
+                                }
+                            });
+                            voyage.remove((err) => {
+                                if (err) {
+                                    return res.status(500).json({
+                                        status: "fail",
+                                        message: err,
+                                    });
+                                }
+                            });
+                            res.status(200).json({
+                                status: "success",
+                                message: "Voyage Deleted Successfully",
+                            });
+                        }
+                    });
+            });
+        } catch (err) {
+            return res.json({
+                status: "fail",
+                message: "Something Bad Happened",
+            });
+        }
     }
 };
 

@@ -3,8 +3,8 @@ const ROLES = db.ROLE;
 const User = db.User;
 
 checkDuplicateUsernameOrPhoneNumber = (req, res, next) => {
-    const firstName = req.body.firstname.trim();
-    const lastName = req.body.lastname.trim();
+    const firstName = req.body.firstname;
+    const lastName = req.body.lastname;
     console.log(firstName, lastName);
     const phoneNumber = req.body.phoneNumber;
     const userName = `${firstName} ${lastName}`;

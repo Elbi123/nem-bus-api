@@ -37,3 +37,9 @@
 
 -   _POST /api/auth/signup_
 -   _POST /api/auth/signin_
+
+### **VOYAGE**
+
+-   _POST /api/v1/company/companyId/voyages_
+-   _UPDATE /api/v1/company/companyId/voyages/:voyageId_
+-   _DELETE /api/v1/company/companyId/voyages/:voyageId_

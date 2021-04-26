@@ -57,6 +57,13 @@ router
     );
 
 router
+    .route("/:companyId/users/:userId")
+    .delete(
+        [authJwt.verifyToken, authJwt.isUserOfCompany, authJwt.isAdmin],
+        companyController.deleteCompanyUser
+    );
+
+router
     .route("/:companyId/users/:userName")
     .patch(
         [authJwt.verifyToken, authJwt.isSuperAdmin],

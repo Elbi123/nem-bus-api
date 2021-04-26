@@ -19,7 +19,7 @@ const user = mongoose.Schema(
             type: Number,
         },
         roles: [{ type: mongoose.Schema.Types.ObjectId, ref: "Role" }],
-        companies: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
+        company: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
     },
     {
         timestamps: true,

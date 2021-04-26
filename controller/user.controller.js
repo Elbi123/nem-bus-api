@@ -21,7 +21,10 @@ exports.superAdmin = (req, res) => {
 exports.getAllUser = async (req, res) => {
     try {
         await User.find({})
-            .populate("roles", "-__v -_id")
+            .populate(
+                "roles company",
+                "-_id -buses -drivers -users -__v -updatedAt"
+            )
             .select("username phoneNumber createdAt")
             .sort({ createdAt: -1 })
             .exec((err, users) => {
@@ -33,17 +36,15 @@ exports.getAllUser = async (req, res) => {
                     return;
                 }
                 if (!users) {
-                    res.status(404).json({
+                    return res.status(404).json({
                         status: "fail",
                         message: "Users doesn't exist",
                     });
-                    return;
                 }
-                res.status(200).json({
+                return res.status(200).json({
                     status: "success",
                     users,
                 });
-                return;
             });
     } catch (err) {
         res.status(500).json({

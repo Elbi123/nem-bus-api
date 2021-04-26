@@ -9,26 +9,41 @@ const User = db.User;
 const Role = db.Role;
 const Company = db.Company;
 
-verifyToken = (req, res, next) => {
+verifyToken = async (req, res, next) => {
     let token = req.headers["x-access-token"];
     if (!token) {
         return res.status(403).send({
             message: "No token provided",
         });
     }
-    jwt.verify(token, config.secret, (err, decoded) => {
+    jwt.verify(token, config.secret, async (err, decoded) => {
         if (err) {
             return res.status(401).send({
                 message: "Unauthorized",
             });
         }
+        const user = await User.findById(decoded.id).exec();
+        if (!user) {
+            return res.status(404).json({
+                status: "fail",
+                message: "Invalid Token",
+            });
+        }
+
         req.userId = decoded.id;
         next();
     });
 };
 
-isAdmin = (req, res, next) => {
-    User.findById(req.userId).exec((err, user) => {
+isAdmin = async (req, res, next) => {
+    const user = User.findOne({ _id: ObjectId(req.userId) });
+    if (!user.roles || typeof user.roles === undefined || user.roles === null) {
+        return res.status(404).json({
+            status: "fail",
+            message: "Role should be added",
+        });
+    }
+    await user.exec((err, user) => {
         if (err) {
             res.status(500).send({
                 message: err,
@@ -61,14 +76,22 @@ isAdmin = (req, res, next) => {
     });
 };
 
-isSuperAdmin = (req, res, next) => {
-    User.findById(req.userId).exec((err, user) => {
+isSuperAdmin = async (req, res, next) => {
+    // const user = User.findOne({ _id: ObjectId(req.userId) });
+    // if (!user.roles || typeof user.roles === undefined || user.roles === null) {
+    //     return res.status(404).json({
+    //         status: "fail",
+    //         message: "Role should be added",
+    //     });
+    // }
+    await User.findOne({ _id: req.userId }).exec((err, user) => {
         if (err) {
             res.status(500).send({
                 message: err,
             });
             return;
         }
+
         Role.find(
             {
                 _id: { $in: user.roles },

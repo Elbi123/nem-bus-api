@@ -4,6 +4,8 @@ const db = require("./../models/index.model");
 Bus = db.Bus;
 User = db.User;
 Company = db.Company;
+Driver = db.Driver;
+Voyage = db.Voyage;
 
 // Company GETTERS AND SETTERS
 exports.getCompanies = async (req, res) => {
@@ -109,12 +111,95 @@ exports.updateCompany = async (req, res) => {
 
 exports.deleteCompany = async (req, res) => {
     try {
-        await Company.findOneAndDelete(req.params.id).then(() => {
-            res.status(200).json({
-                status: "success",
-                message: "Company Deleted",
+        const companyId = req.params.id;
+        console.log(companyId);
+        if (ObjectId.isValid(companyId)) {
+            await Company.findOne({ _id: companyId }).exec(
+                async (err, company) => {
+                    if (err) {
+                        return res.status(500).json({
+                            status: "fail",
+                            error: err,
+                        });
+                    }
+                    if (!company) {
+                        return res.status(404).json({
+                            status: "fail",
+                            message: "Company Not Found",
+                        });
+                    }
+                    console.log(company._id);
+
+                    company.remove((err) => {
+                        if (err) {
+                            return res.json({
+                                err: err,
+                            });
+                        }
+                        // DEREFERENCE THE USER FROM THE COMPANY
+                        // User.update(
+                        //     { _id: { $in: company.users } },
+                        //     { $pull: { user: company._id } },
+                        //     (err) => {
+                        //         if (err) {
+                        //             return res.status(500).json({
+                        //                 status: "fail",
+                        //                 error: err,
+                        //             });
+                        //         }
+                        //     }
+                        // );
+                        // DELETES BUS RELATED WITH COMPANY
+                        Bus.deleteMany(
+                            { _id: { $in: company.buses } },
+                            (err) => {
+                                if (err) {
+                                    return res.status(500).json({
+                                        status: "fail",
+                                        error: err,
+                                    });
+                                }
+                            }
+                        );
+
+                        // DELETES VOYAGES RELATED WITH COMPANY
+                        Voyage.deleteMany(
+                            { _id: { $in: company.voyages } },
+                            (err) => {
+                                if (err) {
+                                    return res.status(500).json({
+                                        status: "fail",
+                                        error: err,
+                                    });
+                                }
+                            }
+                        );
+
+                        // DELETES DRIVERS RELATED WITH COMPANY
+                        Driver.deleteMany(
+                            { _id: { $in: company.drivers } },
+                            (err) => {
+                                if (err) {
+                                    return res.status(500).json({
+                                        status: "fail",
+                                        error: err,
+                                    });
+                                }
+                            }
+                        );
+                        return res.status(201).json({
+                            status: "success",
+                            message: "Company Deleted Successfully",
+                        });
+                    });
+                }
+            );
+        } else {
+            return res.json({
+                success: "fail",
+                message: "Invalid ID Provided",
             });
-        });
+        }
     } catch (err) {
         res.status(404).json({
             message: err,
@@ -311,12 +396,19 @@ exports.createCompanyBus = async (req, res) => {
 
 exports.getAllCompanyBuses = async (req, res) => {
     try {
-        const companies = await Company.find({}).populate("buses");
-        res.status(200).send({
+        const companies = await Company.find({})
+            .populate(
+                "buses users voyages drivers",
+                "-__v -roles -company -updatedAt -password"
+            )
+            .select(
+                "address drivers buses users voyages name createdAt updatedAt"
+            );
+        return res.status(200).send({
             companies,
         });
     } catch (err) {
-        res.status(500).send({
+        return res.status(500).send({
             status: "fail",
             message: err,
         });
@@ -504,12 +596,6 @@ exports.createCompanyUser = async (req, res) => {
                 });
                 return;
             }
-            // if (company.users.length === 0) {
-            //     res.status(401).send({
-            //         message: "You Should Add Compan's User First",
-            //     });
-            //     return;
-            // }
             await User.findOne({ username: userName }, async (err, sUser) => {
                 if (err) {
                     res.status(500).send({
@@ -559,6 +645,90 @@ exports.createCompanyUser = async (req, res) => {
     } else {
         res.status(404).send({
             message: "Invalid Id",
+        });
+    }
+};
+
+exports.deleteCompanyUser = async (req, res) => {
+    try {
+        const companyId = req.params.companyId;
+        const userId = req.params.userId;
+        await Company.findOne({ _id: companyId }).exec(async (err, company) => {
+            if (err) {
+                res.status(500).send({
+                    status: "fail",
+                    message: err,
+                });
+                return;
+            }
+            if (!company) {
+                res.status(404).send({
+                    status: "fail",
+                    message: "Company Not Found",
+                });
+                return;
+            }
+            if (ObjectId.isValid(userId)) {
+                await User.findOne({ _id: userId })
+                    .populate("company")
+                    .exec(async (err, user) => {
+                        if (err) {
+                            res.status(500).send({
+                                status: "fail",
+                                message: err,
+                            });
+                            return;
+                        }
+                        if (!user) {
+                            res.status(404).send({
+                                status: "fail",
+                                message: `User Not Found`,
+                            });
+                            return;
+                        }
+                        if (user.company.users.includes(userId)) {
+                            const nUserIds = user.company.users.filter((el) => {
+                                return !el.equals(userId);
+                            });
+                            user.company.users = nUserIds;
+                            company.users = nUserIds;
+                            company.save((err) => {
+                                if (err) {
+                                    return res.status(500).send({
+                                        status: "fail",
+                                        message: err,
+                                    });
+                                }
+                            });
+                            user.remove((err) => {
+                                if (err) {
+                                    return res.status(500).send({
+                                        status: "fail",
+                                        message: err,
+                                    });
+                                }
+                                return res.status(200).send({
+                                    status: "success",
+                                    message: "User Deleted Successfully",
+                                });
+                            });
+                        } else {
+                            return res.status(500).send({
+                                message: "Company Has No Such User",
+                            });
+                        }
+                    });
+            } else {
+                return res.status(501).send({
+                    status: "fail",
+                    message: "Invalid ID Provided",
+                });
+            }
+        });
+    } catch (err) {
+        return res.status(500).send({
+            status: "fail",
+            message: err,
         });
     }
 };

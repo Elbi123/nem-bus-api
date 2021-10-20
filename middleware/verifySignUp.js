@@ -1,61 +1,46 @@
 const db = require("./../models/index.model");
-const ROLES = db.ROLE;
-const User = db.User;
+const User = require("./../models/user.model");
+const Role = require("./../models/role.model");
+const AppError = require("./../utils/appError");
 
-checkDuplicateUsernameOrPhoneNumber = (req, res, next) => {
-    const firstName = req.body.firstname;
-    const lastName = req.body.lastname;
-    console.log(firstName, lastName);
+const checkDuplicateUsernameOrPhoneNumber = async (req, res, next) => {
+    const message = " has already been taken. Try another one!";
     const phoneNumber = req.body.phoneNumber;
-    const userName = `${firstName} ${lastName}`;
+    const userName = req.body.userName;
+
     // Check if username already existed
-    User.findOne({
-        username: firstName,
-    }).exec((err, user) => {
-        if (err) {
-            res.status(500).send({
-                message: err,
-            });
-            return;
-        }
-        if (user) {
-            res.status(400).send({
-                message: "Failed! Username is already in use!",
-            });
-            return;
+    if (phoneNumber.length === 9) {
+        phoneNumber = `0${phoneNumber}`;
+    }
+    const user = await User.findOne({
+        $or: [{ userName }, { phoneNumber }],
+    });
+
+    if (user) {
+        if (user.userName && user.userName === userName) {
+            return next(new AppError(`${userName}${message}`, 400));
         }
 
-        // Check if phoneNumber already existed
-        User.findOne({
-            phoneNumber: phoneNumber,
-        }).exec((err, user) => {
-            if (err) {
-                res.status(500).send({
-                    message: err,
-                });
-                return;
-            }
-            if (user) {
-                res.status(400).send({
-                    message: "Failed! Phone Number is already in use!",
-                });
-                return;
-            }
-            next();
-        });
-    });
+        if (user.phoneNumber && user.phoneNumber === phoneNumber) {
+            return next(new AppError(`${phoneNumber}${message}`, 400));
+        }
+    }
+    next();
 };
 
-checkRoleExisted = (req, res, next) => {
+const checkRoleExisted = async (req, res, next) => {
     if (req.body.roles) {
-        for (let i = 0; i < req.body.roles.length; i++) {
-            if (!ROLES.includes(req.body.roles[i])) {
-                res.status(400).send({
-                    message: `Failed! Role ${req.body.roles[i]} does not exist`,
-                });
-                return;
-            }
+        const existingRoles = await Role.find({
+            name: { $in: req.body.roles },
+        });
+        if (existingRoles.length === 0) {
+            return next(
+                new AppError(`Role '${req.body.roles[0]}' Not Found`, 404)
+            );
         }
+    } else {
+        const roles = ["passenger"];
+        req.body.roles = roles;
     }
     next();
 };

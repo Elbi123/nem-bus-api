@@ -1,195 +1,124 @@
-const { compareSync } = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const ObjectId = require("mongoose").Types.ObjectId;
-// const Company = require("../models/company.model");
-const config = require("./../config/auth.config");
-// const { User, mongoose } = require("./../models/index.model");
-const db = require("./../models/index.model");
-const User = db.User;
-const Role = db.Role;
-const Company = db.Company;
+const User = require("./../models/user.model");
+const Role = require("./../models/role.model");
+const Company = require("./../models/company.model");
 
-verifyToken = async (req, res, next) => {
+const catchAsync = require("./../utils/catchAsync");
+const AppError = require("./../utils/appError");
+
+const verifyToken = catchAsync(async (req, res, next) => {
     let token = req.headers["x-access-token"];
     if (!token) {
-        return res.status(403).send({
-            message: "No token provided",
-        });
+        return next(new AppError("No Token Provided", 400));
     }
-    jwt.verify(token, config.secret, async (err, decoded) => {
+    await jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
         if (err) {
-            return res.status(401).send({
-                message: "Unauthorized",
-            });
+            return next(new AppError("Unauthorized", 401));
         }
-        const user = await User.findById(decoded.id).exec();
+        const user = await User.findOne({ _id: decoded.id });
         if (!user) {
-            return res.status(404).json({
-                status: "fail",
-                message: "Invalid Token",
-            });
+            return next(new AppError("User Not Found", 404));
         }
 
         req.userId = decoded.id;
         next();
     });
-};
+});
 
-isAdmin = async (req, res, next) => {
-    const user = User.findOne({ _id: ObjectId(req.userId) });
+const isCompany = catchAsync(async (req, res, next) => {
+    const user = await User.findOne({ _id: req.userId });
     if (!user.roles || typeof user.roles === undefined || user.roles === null) {
-        return res.status(404).json({
-            status: "fail",
-            message: "Role should be added",
-        });
+        return next(new AppError("Role Not Found", 404));
     }
-    await user.exec((err, user) => {
-        if (err) {
-            res.status(500).send({
-                message: err,
-            });
-            return;
-        }
-        Role.find(
-            {
-                _id: { $in: user.roles },
-            },
-            (err, roles) => {
-                if (err) {
-                    res.status(500).send({
-                        message: err,
-                    });
-                    return;
-                }
 
-                for (let i = 0; i < roles.length; i++) {
-                    if (roles[i].name === "admin") {
-                        next();
-                        return;
-                    }
-                }
-                res.status(403).send({
-                    message: "Require Admin Permission!",
-                });
-            }
-        );
-    });
-};
-
-isSuperAdmin = async (req, res, next) => {
-    // const user = User.findOne({ _id: ObjectId(req.userId) });
-    // if (!user.roles || typeof user.roles === undefined || user.roles === null) {
-    //     return res.status(404).json({
-    //         status: "fail",
-    //         message: "Role should be added",
-    //     });
-    // }
-    await User.findOne({ _id: req.userId }).exec((err, user) => {
-        if (err) {
-            res.status(500).send({
-                message: err,
-            });
-            return;
-        }
-
-        Role.find(
-            {
-                _id: { $in: user.roles },
-            },
-            (err, roles) => {
-                if (err) {
-                    res.status(500).send({
-                        message: err,
-                    });
-                    return;
-                }
-
-                for (let i = 0; i < roles.length; i++) {
-                    if (roles[i].name === "super-admin") {
-                        next();
-                        return;
-                    }
-                }
-                res.status(403).send({
-                    message: "Require Super Admin Permission!",
-                });
-            }
-        );
-    });
-};
-
-isUserOfCompany = (req, res, next) => {
-    const cId = req.params.name;
-    // console.log(cId);
-    const token = req.headers["x-access-token"];
-    if (!token) {
-        res.status(401).send({
-            message: "No Token Provided",
-        });
-        return;
-    }
-    const decode = jwt.verify(token, config.secret);
-    const userId = decode.id;
-    // console.log(userId);
-    // var token = jwt.sign({ id: user.id }, config.secret, {
-    //     expiresIn: 86400,
-    // });
-    if (ObjectId.isValid(cId)) {
-        Company.findById(cId).exec((err, company) => {
+    await Role.find(
+        {
+            _id: { $in: user.roles },
+        },
+        (err, roles) => {
             if (err) {
                 res.status(500).send({
                     message: err,
                 });
                 return;
             }
-            if (!company) {
+
+            for (let i = 0; i < roles.length; i++) {
+                if (roles[i].name === "company") {
+                    next();
+                    return;
+                }
+            }
+            return next(new AppError("Unauthorized", 401));
+        }
+    );
+});
+
+const isPlatformAdmin = catchAsync(async (req, res, next) => {
+    const user = await User.findOne({ _id: req.userId });
+
+    await Role.find(
+        {
+            _id: { $in: user.roles },
+        },
+        (err, roles) => {
+            if (err) {
                 res.status(500).send({
-                    message: "Company Not Found",
+                    message: err,
                 });
                 return;
             }
-            User.find(
-                {
-                    _id: { $in: company.users },
-                },
-                (err, users) => {
-                    // console.log(users);
-                    if (err) {
-                        res.status(500).send({
-                            message: err,
-                        });
-                        return;
-                    }
-                    if (!users) {
-                        res.status(500).send({
-                            message: "Company User Not Found",
-                        });
-                        return;
-                    }
-                    for (let i = 0; i < users.length; i++) {
-                        if (users[i].equals(userId)) {
-                            next();
-                            return;
-                        }
-                    }
-                    res.status(403).send({
-                        message: "Require Company's Admin Permission!",
-                    });
+
+            for (let i = 0; i < roles.length; i++) {
+                if (roles[i].name === "super-admin") {
+                    next();
+                    return;
                 }
-            );
-        });
-    } else {
-        res.status(500).send({
-            status: "fail",
-            message: "Invalid Id Provided",
-        });
+            }
+            return next(new AppError("Unauthorized", 401));
+        }
+    );
+});
+
+const isUserOfCompany = catchAsync(async (req, res, next) => {
+    const cId = req.params.name;
+    const token = req.headers["x-access-token"];
+    if (!token) {
+        return next(new AppError("No Token Provided", 400));
     }
-};
+    const decode = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decode.id;
+    const company = await Company.findOne({ _id: cId });
+    if (!company) {
+        return next(new AppError("Company Not Found", 404));
+    }
+
+    if (!company) {
+        res.status(500).send({
+            message: "Company Not Found",
+        });
+        return;
+    }
+    const users = await User.find({
+        _id: { $in: company.users },
+    });
+
+    if (!users.length) {
+        return next(new AppError("User Not Found For Company", 404));
+    }
+    for (let i = 0; i < users.length; i++) {
+        if (users[i].equals(userId)) {
+            next();
+            return;
+        }
+    }
+    return next(new AppError("Unauthorized", 401));
+});
 
 const authJwt = {
     verifyToken,
-    isAdmin,
-    isSuperAdmin,
+    isCompany,
+    isPlatformAdmin,
     isUserOfCompany,
 };
 

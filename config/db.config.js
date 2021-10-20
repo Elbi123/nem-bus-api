@@ -4,7 +4,7 @@ const dotenv = require("dotenv");
 const Role = dbs.Role;
 
 dotenv.config({
-    path: "./config.env",
+    path: "./.env",
 });
 
 // const db = process.env.DATABASE_LOCAL;
@@ -22,7 +22,11 @@ const connetDB = async () => {
             useUnifiedTopology: true,
         });
         initial();
-        console.log(`MongoDB connected: ${connectionString.connection.host}`);
+        if (process.env.NODE_ENV === "development") {
+            console.log(
+                `MongoDB connected: ${connectionString.connection.host}`
+            );
+        }
     } catch (err) {
         console.log(err);
         process.exit(1);
@@ -32,31 +36,44 @@ const connetDB = async () => {
 function initial() {
     Role.estimatedDocumentCount((err, count) => {
         if (!err && count === 0) {
+            // every user is 'passenger'
             new Role({
-                name: "user",
+                name: "passenger",
             }).save((err) => {
                 if (err) {
-                    console.log("Erro while saving Role");
+                    console.log("Error while saving Role");
                 }
-                console.log("Role 'user' is added");
+                console.log("Role 'passenger' is added");
             });
 
+            // user with the role 'driver'
             new Role({
-                name: "admin",
+                name: "driver",
             }).save((err) => {
                 if (err) {
-                    console.log("Erro while saving Role");
+                    console.log("Error while saving Role");
                 }
-                console.log("Role 'admin' is added");
+                console.log("Role 'driver' is added");
             });
 
+            // user with the role 'company'
             new Role({
-                name: "super-admin",
+                name: "company",
             }).save((err) => {
                 if (err) {
-                    console.log("Erro while saving Role");
+                    console.log("Error while saving Role");
                 }
-                console.log("Role 'super-admin' is added");
+                console.log("Role 'company' is added");
+            });
+
+            // user with the whole platform admin = "platform-admin"
+            new Role({
+                name: "platform-admin",
+            }).save((err) => {
+                if (err) {
+                    console.log("Error while saving Role");
+                }
+                console.log("Role 'platform-admin' is added");
             });
         }
     });

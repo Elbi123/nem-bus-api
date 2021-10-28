@@ -32,7 +32,7 @@ app.use("/api/v1/company", companyRouter);
 app.use("/api/v1/company", driverRoute);
 app.use("/api/v1/company", voyageRouter);
 app.use("/api/v1/buses", busRouter);
-app.use("/api/v1/company", busRouter);
+app.use("/api/v1/companies", busRouter);
 
 app.all("*", (req, res, next) => {
     next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));

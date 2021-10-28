@@ -49,6 +49,14 @@ const companySchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        path: {
+            type: String,
+        },
+        slug: {
+            type: String,
+            required: true,
+            unique: true,
+        },
 
         drivers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Driver" }],
         buses: [{ type: mongoose.Schema.Types.ObjectId, ref: "Bus" }],

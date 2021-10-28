@@ -1,44 +1,43 @@
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
-const bodyParser = require("body-parser");
 
-const routers = require("./routes/index.route");
+const voyageRouter = require("./routes/voyage.router");
+const userRouter = require("./routes/user.router");
+const companyRouter = require("./routes/company.route");
+const busRouter = require("./routes/bus.route");
+const driverRoute = require("./routes/driver.route");
+const authRouter = require("./routes/auth.route");
 
-const voyageRouter = routers.VoyageRoute;
-const userRouter = routers.UserRoute;
-const companyRouter = routers.CompanyRoute;
-const busRouter = routers.BusRoute;
-const driverRoute = routers.DriverRouter;
-const partialRouter = routers.PartialRoute;
-const authRouter = routers.AuthRoute;
+const AppError = require("./utils/appError");
+const errorController = require("./controller/error.controller");
 
-// const { fail } = require("assert");
-const { dirname } = require("path");
 const app = express();
 
 // APP - MIDDLEWARE
-// console.log(process.env.NODE_ENV);
 if (process.env.NODE_ENV === "development") {
     app.use(morgan("dev"));
 }
 app.use(cors());
 app.use("*", cors());
 app.use(express.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: false }));
 
 // ROUTER - MIDDLEWARE
-app.use(authRouter);
+app.use("/api/auth", authRouter);
 app.use("/api/v1/voyages", voyageRouter);
 app.use("/api/v1/users", userRouter);
-// app.use("/api/v1/user", userRouter);
 app.use("/api/v1/companies", companyRouter);
 app.use("/api/v1/company", companyRouter);
 app.use("/api/v1/company", driverRoute);
 app.use("/api/v1/company", voyageRouter);
 app.use("/api/v1/buses", busRouter);
-app.use("/api/v1/company", busRouter);
-app.use("/api/test", partialRouter);
+app.use("/api/v1/companies", busRouter);
+
+app.all("*", (req, res, next) => {
+    next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+});
+
+app.use(errorController);
 
 module.exports = app;

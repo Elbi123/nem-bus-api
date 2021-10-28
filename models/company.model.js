@@ -1,35 +1,63 @@
 const mongoose = require("mongoose");
 
-const company = mongoose.Schema(
+const companySchema = new mongoose.Schema(
     {
         name: {
             type: String,
             unique: true,
             required: true,
         },
-
-        address: {
-            phoneNumber: {
-                type: String,
-                required: true,
-            },
-            email: {
-                type: String,
-                required: true,
-            },
-            street: {
-                type: String,
-                required: false,
-            },
-            workingDays: {
-                type: String,
-                required: false,
-            },
-            workingHours: {
-                type: String,
-                required: false,
-            },
+        phoneNumber: {
+            type: [String],
+            required: true,
         },
+        email: {
+            type: String,
+            required: true,
+            unique: true,
+        },
+        description: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        domain: {
+            type: String,
+            unique: true,
+        },
+        street: {
+            type: String,
+        },
+        workingDays: {
+            type: String,
+        },
+        foundedYear: {
+            type: Date,
+            required: true,
+        },
+
+        // location of the head-quarter
+        location: {
+            type: String,
+            required: true,
+        },
+        country: {
+            type: String,
+            default: "Ethiopia",
+        },
+        city: {
+            type: String,
+            required: true,
+        },
+        path: {
+            type: String,
+        },
+        slug: {
+            type: String,
+            required: true,
+            unique: true,
+        },
+
         drivers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Driver" }],
         buses: [{ type: mongoose.Schema.Types.ObjectId, ref: "Bus" }],
         users: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
@@ -40,6 +68,6 @@ const company = mongoose.Schema(
     }
 );
 
-const Company = mongoose.model("Company", company);
+const Company = mongoose.model("Company", companySchema);
 
 module.exports = Company;

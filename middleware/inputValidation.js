@@ -1,4 +1,5 @@
 const AppError = require("../utils/appError");
+const checkEmptyFields = require("./../utils/checkEmptyFields");
 
 exports.nameValidation = (req, res, next) => {
     let { firstName, lastName } = req.body;
@@ -23,7 +24,6 @@ exports.nameValidation = (req, res, next) => {
 };
 
 exports.checkEmptyFields = (req, res, next) => {
-    let errors = [];
     let userInputs = req.body;
 
     let outPutValidationObject = {
@@ -34,36 +34,11 @@ exports.checkEmptyFields = (req, res, next) => {
         password: "Password",
         passwordConfirm: "Password Confirm",
     };
-
-    for (const userInput in userInputs) {
-        if (
-            userInputs[userInput] === "" ||
-            userInputs[userInput] === null ||
-            userInputs[userInput] === undefined
-        ) {
-            errors.push(userInput);
-        }
+    const message = checkEmptyFields(userInputs, outPutValidationObject);
+    if (message) {
+        return next(new AppError(message, 400));
     }
-    let finalOutput = {};
-    for (const output in outPutValidationObject) {
-        for (let i = 0; i < errors.length; i++) {
-            if (output === errors[i]) {
-                finalOutput[outPutValidationObject[output]] = " is required";
-            }
-        }
-    }
-
-    let concatErrorMessages = "";
-    for (const error in finalOutput) {
-        let message = error + finalOutput[error] + "|";
-        concatErrorMessages = concatErrorMessages + message;
-    }
-    const objKeys = Object.keys(finalOutput);
-    if (!objKeys.length) {
-        next();
-    } else {
-        return next(new AppError(concatErrorMessages, 400));
-    }
+    next();
 };
 
 exports.checkIfPhoneNumberFieldIsEmpty = (req, res, next) => {

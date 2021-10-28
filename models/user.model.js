@@ -37,8 +37,12 @@ const userSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
-        roles: { type: mongoose.Schema.Types.ObjectId, ref: "Role" },
-        company: [{ type: mongoose.Schema.Types.ObjectId, ref: "Company" }],
+        isUserAssignedToCompany: {
+            type: Boolean,
+            default: false,
+        },
+        roles: [{ type: mongoose.Schema.Types.ObjectId, ref: "Role" }],
+        // company: [{ type: mongoose.Schema.Types.ObjectId, ref: "Company" }],
     },
     {
         timestamps: true,
@@ -76,8 +80,6 @@ userSchema.methods.comparePassword = async function (
 ) {
     return await bcrypt.compare(candidatePassword, userPassword);
 };
-
-// twilio implementation
 
 const User = mongoose.model("User", userSchema);
 

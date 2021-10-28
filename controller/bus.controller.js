@@ -1,127 +1,205 @@
-const Company = require("./../models/index.model").Company;
-const Bus = require("./../models/index.model").Bus;
+const Company = require("./../models/company.model");
+const Bus = require("./../models/bus.model");
 
-exports.getBuses = async (req, res) => {
-    try {
-        const buses = await Bus.find({});
+const catchAsync = require("./../utils/catchAsync");
+const AppError = require("./../utils/appError");
+
+exports.getAllBuses = catchAsync(async (req, res, next) => {
+    const count = await Bus.countDocuments();
+    const buses = await Bus.find({});
+
+    res.status(200).json({
+        status: "success",
+        count,
+        buses,
+    });
+});
+
+exports.getSingleBus = catchAsync(async (req, res, next) => {
+    const { id } = req.params;
+    const bus = await Bus.findOne({ _id: id });
+    if (!bus) {
+        return next(new AppError("Bus Not Found", 404));
+    }
+    res.status(200).json({
+        bus,
+    });
+});
+
+exports.getCompanyBuses = catchAsync(async (req, res, next) => {
+    const { slug } = req.params;
+
+    const company = await Company.findOne({ slug });
+    if (!company) {
+        return next(new AppError("Company Not Found", 404));
+    }
+
+    const buses = await Bus.find({ _id: { $in: company.buses } });
+    if (!buses.length) {
         res.status(200).json({
-            buses: buses,
-        });
-    } catch (err) {
-        res.status(404).json({
-            message: err,
+            status: "success",
+            message: "No Bus Found",
         });
     }
-};
 
-exports.getSingleBus = async (req, res) => {
-    const busId = req.params.id;
-    const bus = await Bus.findById({ _id: busId });
     res.status(200).json({
-        bus: bus,
+        status: "success",
+        buses,
     });
-};
+});
 
-exports.createBus = async (req, res) => {
-    const company_id = req.params.companyId;
-    // console.log(company_id);
-    const busObject = await req.body;
-    const newBus = new Bus(busObject);
+exports.getCompanyBus = catchAsync(async (req, res, next) => {
+    const { slug, id } = req.params;
 
-    await Company.findOne({ _id: company_id }, async (err, foundCompany) => {
-        if (!foundCompany) {
-            res.json({
-                message: "No Company is Found",
-            });
-        }
-        foundCompany.buses.push(newBus);
-        newBus.company = foundCompany;
+    const company = await Company.findOne({ slug });
+    const bus = await Bus.findOne({ _id: id });
 
-        await newBus.save((err, savedCompany) => {
-            if (err) {
-                res.json({
-                    message: "Error while saving",
-                });
-            }
-            return res.json({
-                savedCompany,
-            });
-        });
+    if (!company) {
+        return next(new AppError("Company Not Found", 404));
+    }
+    if (!bus) {
+        return next(new AppError(`Bus with id: ${id} Not Found`, 404));
+    }
 
-        await foundCompany.save((err, savedCompany) => {
-            if (err) {
-                res.json({
-                    message: "Error saving Company",
-                });
-            }
-            savedCompany;
-        });
-        return foundCompany;
+    if (!company.buses.includes(bus._id)) {
+        return next(
+            new AppError(
+                `Company has no bus with id: ${bus._id} for company ${company._id}`,
+                404
+            )
+        );
+    }
+    res.status(200).json({
+        status: "success",
+        bus,
     });
-};
+});
 
-exports.updateCompanyBus = (req, res) => {
-    const new_company_id = req.params.companyId;
-    const { busId } = req.params;
-    const newBus = req.body;
-    Bus.findOne({ _id: busId }, (err, bus) => {
-        if (!bus) {
-            return res.json({
-                message: err,
-            });
+exports.createCompanyBus = catchAsync(async (req, res, next) => {
+    const { slug } = req.params;
+
+    // passengerCapacity, busSideNumber, passengerCapacity need some validation
+    const { busPlateNumber, busSideNumber, passengerCapacity } = req.body;
+
+    let newBus = new Bus({
+        busPlateNumber,
+        busSideNumber,
+        passengerCapacity,
+    });
+
+    const company = await Company.findOne({ slug });
+
+    if (!company) {
+        return next(new AppError("Company Not Found", 404));
+    }
+    const bus = await Bus.findOne({ _id: { $in: company.buses } });
+    if (bus) {
+        return next(
+            new AppError(`${bus.busPlateNumber} already added to company`, 403)
+        );
+    }
+
+    newBus.company = company._id;
+
+    await newBus.save();
+
+    await Company.updateOne(
+        { _id: company._id },
+        { $push: { buses: newBus._id } }
+    );
+
+    res.status(201).json({
+        status: "success",
+        message: `Bus added to company ${company.name}`,
+    });
+});
+
+exports.updateCompanyBus = catchAsync(async (req, res, next) => {
+    const { slug, id } = req.params;
+    const updateBus = { ...req.body };
+
+    const company = await Company.findOne({ slug });
+    const bus = await Bus.findOne({ _id: id });
+
+    if (!company) {
+        return next(new AppError("Company Not Found", 404));
+    }
+    if (!bus) {
+        return next(new AppError(`Bus with id: ${id} Not Found`, 404));
+    }
+
+    if (updateBus.busPlateNumber || updateBus.busSideNumber) {
+        const existingBus = await Bus.findOne({
+            $or: [
+                { busPlateNumber: updateBus.busPlateNumber },
+                { busSideNumber: updateBus.busSideNumber },
+            ],
+        });
+        if (existingBus) {
+            if (existingBus.busPlateNumber === updateBus.busPlateNumber) {
+                return next(
+                    new AppError(
+                        `Bus with plate number ${updateBus.busPlateNumber} already registered. Use another plate number`,
+                        400
+                    )
+                );
+            } else if (existingBus.busSideNumber === updateBus.busSideNumber) {
+                return next(
+                    new AppError(
+                        `Bus with side number ${updateBus.busSideNumber} already registered. Use another side number`,
+                        400
+                    )
+                );
+            }
         }
-        const oldCompanyId = bus.company._id;
-        Company.findById(oldCompanyId).then((oldCompany) => {
-            if (!oldCompany) {
-                return res.status(400).json({
-                    message: "No Company with that ID",
-                });
-            }
-            const index = oldCompany.buses.indexOf(busId);
-            if (index > -1) {
-                oldCompany.buses.splice(index, 1);
-            }
-            oldCompany.save((err, savedCompany) => {
-                if (err) {
-                    return res.json({
-                        message: err,
-                    });
-                }
-                return savedCompany;
-            });
-            return oldCompany;
-        });
+    }
 
-        Company.findById(new_company_id).then((newCompany) => {
-            if (!newCompany) {
-                return res.json({
-                    message: "Not Company",
-                });
-            }
-            newCompany.buses.push(bus);
-            newCompany.save((error, savedCompany) => {
-                if (error) {
-                    return res.json({
-                        message: error,
-                    });
-                }
-                return savedCompany;
-            });
-            bus.company = newCompany;
-            Object.assign(bus, newBus);
-            // _.merge(car, newCar);
-            bus.save((err, saved) => {
-                if (err) {
-                    return res.send({
-                        message: "Error while saving",
-                    });
-                }
-                return res.json({
-                    saved: saved,
-                });
-            });
-            return bus;
-        });
+    if (!company.buses.includes(bus._id)) {
+        return next(
+            new AppError(
+                `Bus with plate number ${bus.busPlateNumber} not found for ${company.name}`
+            )
+        );
+    }
+    await Bus.updateOne({ _id: bus._id }, updateBus);
+
+    res.status(200).json({
+        status: "success",
+        message: `Bus with plate number ${bus.busPlateNumber} updated successfully`,
+    });
+});
+
+exports.deleteCompanyBus = async (req, res, next) => {
+    const { slug, id } = req.params;
+
+    const company = await Company.findOne({ slug });
+    const bus = await Bus.findOne({ _id: id });
+
+    if (!company) {
+        return next(new AppError("Company Not Found", 404));
+    }
+    if (!bus) {
+        return next(new AppError(`Bus with id ${id} Not Found`, 404));
+    }
+
+    if (!company.buses.includes(bus._id)) {
+        return next(
+            new AppError(
+                `Bus with id  ${bus._id} not found for ${company.name}`
+            )
+        );
+    }
+
+    await Company.updateOne(
+        { _id: company._id },
+        { $pull: { buses: bus._id } }
+    );
+
+    await Bus.deleteOne({ _id: bus._id });
+
+    res.status(200).json({
+        status: "success",
+        message: `Bus with id ${bus._id} deleted successfully for company ${company.name}`,
     });
 };
 

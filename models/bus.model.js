@@ -1,21 +1,20 @@
 const mongoose = require("mongoose");
 
-const bus = mongoose.Schema(
+const busSchema = new mongoose.Schema(
     {
-        busId: {
+        busPlateNumber: {
             type: String,
             unique: true,
             required: true,
         },
         busSideNumber: {
-            type: Number,
+            type: String,
             unique: true,
             required: true,
         },
-        passangerCapacity: {
-            type: Number,
+        passengerCapacity: {
+            type: String,
             required: true,
-            default: 60,
         },
         company: {
             type: mongoose.Schema.Types.ObjectId,
@@ -31,6 +30,6 @@ const bus = mongoose.Schema(
     }
 );
 
-const Bus = mongoose.model("Bus", bus);
+const Bus = mongoose.model("Bus", busSchema);
 
 module.exports = Bus;
